@@ -1,0 +1,39 @@
+# Build artifacts
+bin/
+obj/
+out/
+
+# IDE and editor files
+.vs/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docker files
+Dockerfile
+.dockerignore
+
+# Documentation
+*.md
+README*
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+azure-pipelines.yml
+
+# Kubernetes manifests
+*.yaml
+*.yml
+k8s/
+
+# OS files
+.DS_Store
+Thumbs.db

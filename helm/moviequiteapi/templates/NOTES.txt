@@ -1,0 +1,37 @@
+1. Get the application URL by running these commands:
+{{- if eq .Values.service.type "LoadBalancer" }}
+  NOTE: It may take a few minutes for the LoadBalancer IP to be available.
+        You can watch the status of by running 'kubectl get --namespace {{ .Release.Namespace }} svc -w {{ include "moviequiteapi.fullname" . }}'
+
+  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "moviequiteapi.fullname" . }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
+  echo "MovieQuiteAPI URL: http://$SERVICE_IP:{{ .Values.service.port }}"
+{{- else if eq .Values.service.type "ClusterIP" }}
+  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "moviequiteapi.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
+  export CONTAINER_PORT=$(kubectl get pod --namespace {{ .Release.Namespace }} $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+  echo "Visit http://127.0.0.1:8080 to use your application"
+  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 8080:$CONTAINER_PORT
+{{- end }}
+
+2. Test the API endpoints:
+  # Get all quotes
+  curl http://$SERVICE_IP/api/quotes
+
+  # Get a random quote
+  curl http://$SERVICE_IP/api/quotes/random
+
+  # Get a specific quote by ID
+  curl http://$SERVICE_IP/api/quotes/1
+
+3. Security Features Enabled:
+  - Running as non-root user (UID: 1654)
+  - Read-only root filesystem
+  - No privilege escalation
+  - All capabilities dropped
+  - Seccomp profile enabled
+  - Distroless container image
+
+{{- if .Values.autoscaling.enabled }}
+4. Autoscaling is enabled:
+  - Min replicas: {{ .Values.autoscaling.minReplicas }}
+  - Max replicas: {{ .Values.autoscaling.maxReplicas }}
+{{- end }}

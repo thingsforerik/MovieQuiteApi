@@ -1,0 +1,12 @@
+apiVersion: v2
+name: moviequiteapi
+description: A Helm chart for MovieQuiteApi - A simple movie quotes API
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - dotnet
+  - api
+  - movie-quotes
+maintainers:
+  - name: Erik Hanson
