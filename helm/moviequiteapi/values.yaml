@@ -9,7 +9,8 @@ image:
   pullPolicy: IfNotPresent
   tag: "latest"
 
-imagePullSecrets: []
+imagePullSecrets:
+  - name: ocir-secret
 nameOverride: ""
 fullnameOverride: ""
 
