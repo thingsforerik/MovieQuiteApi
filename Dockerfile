@@ -1,5 +1,5 @@
 # Build stage
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Copy csproj and restore dependencies
@@ -13,7 +13,7 @@ COPY . .
 RUN dotnet publish -c Release -o /app/publish
 
 # Runtime stage - using chiseled Ubuntu (distroless-like) image
-FROM mcr.microsoft.com/dotnet/aspnet:9.0-jammy-chiseled AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-jammy-chiseled AS runtime
 
 # Create a non-root user
 USER $APP_UID
