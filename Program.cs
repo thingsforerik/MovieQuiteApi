@@ -1,4 +1,14 @@
+using Microsoft.EntityFrameworkCore;
+using MovieQuiteApi.Data;
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Add MySQL DbContext
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? "Server=localhost;Port=3306;Database=moviequotes;User=root;Password=password;";
+
+builder.Services.AddDbContext<MovieDbContext>(options =>
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
 // Add CORS for API Gateway integration
 builder.Services.AddCors(options =>
@@ -13,6 +23,13 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Auto-migrate database on startup
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<MovieDbContext>();
+    db.Database.Migrate();
+}
+
 // Enable CORS
 app.UseCors();
 
@@ -25,67 +42,64 @@ app.MapGet("/ready", () => Results.Ok(new { status = "ready", timestamp = DateTi
    .WithName("ReadinessCheck")
    .WithTags("Health");
 
-// 1. The Data: A hardcoded list of quotes
-var quotes = new List<MovieQuite>
-{
-    new MovieQuite { Id = 1, Quote = "May the Force be with you.", Movie = "Star Wars" },
-    new MovieQuite { Id = 2, Quote = "I'm going to make him an offer he can't refuse.", Movie = "The Godfather" },
-    new MovieQuite { Id = 3, Quote = "Here's looking at you, kid.", Movie = "Casablanca" },
-    new MovieQuite { Id = 4, Quote = "You can't handle the truth!", Movie = "A Few Good Men" },
-    new MovieQuite { Id = 5, Quote = "I'll be back.", Movie = "The Terminator" }
-};
-
-// 2. The Endpoints: CRUD API endpoints
+// API Endpoints using MySQL database
 
 // GET all quotes
-app.MapGet("/api/quotes", () =>
+app.MapGet("/api/quotes", async (MovieDbContext db) =>
 {
-    return quotes;
+    return await db.MovieQuotes.ToListAsync();
 });
 
 // GET quote by ID
-app.MapGet("/api/quotes/{id}", (int id) =>
+app.MapGet("/api/quotes/{id}", async (int id, MovieDbContext db) =>
 {
-    var quote = quotes.FirstOrDefault(q => q.Id == id);
+    var quote = await db.MovieQuotes.FindAsync(id);
     return quote is not null ? Results.Ok(quote) : Results.NotFound();
 });
 
 // GET random quote
-app.MapGet("/api/quotes/random", () =>
+app.MapGet("/api/quotes/random", async (MovieDbContext db) =>
 {
+    var count = await db.MovieQuotes.CountAsync();
+    if (count == 0)
+        return Results.NotFound();
+
     var random = new Random();
-    int index = random.Next(quotes.Count);
-    return quotes[index];
+    int skip = random.Next(count);
+    var quote = await db.MovieQuotes.Skip(skip).FirstAsync();
+    return Results.Ok(quote);
 });
 
 // POST create new quote
-app.MapPost("/api/quotes", (MovieQuite newQuote) =>
+app.MapPost("/api/quotes", async (MovieQuite newQuote, MovieDbContext db) =>
 {
-    newQuote.Id = quotes.Max(q => q.Id) + 1;
-    quotes.Add(newQuote);
+    db.MovieQuotes.Add(newQuote);
+    await db.SaveChangesAsync();
     return Results.Created($"/api/quotes/{newQuote.Id}", newQuote);
 });
 
 // PUT update existing quote
-app.MapPut("/api/quotes/{id}", (int id, MovieQuite updatedQuote) =>
+app.MapPut("/api/quotes/{id}", async (int id, MovieQuite updatedQuote, MovieDbContext db) =>
 {
-    var quote = quotes.FirstOrDefault(q => q.Id == id);
+    var quote = await db.MovieQuotes.FindAsync(id);
     if (quote is null)
         return Results.NotFound();
-    
+
     quote.Quote = updatedQuote.Quote;
     quote.Movie = updatedQuote.Movie;
+    await db.SaveChangesAsync();
     return Results.Ok(quote);
 });
 
 // DELETE quote
-app.MapDelete("/api/quotes/{id}", (int id) =>
+app.MapDelete("/api/quotes/{id}", async (int id, MovieDbContext db) =>
 {
-    var quote = quotes.FirstOrDefault(q => q.Id == id);
+    var quote = await db.MovieQuotes.FindAsync(id);
     if (quote is null)
         return Results.NotFound();
-    
-    quotes.Remove(quote);
+
+    db.MovieQuotes.Remove(quote);
+    await db.SaveChangesAsync();
     return Results.NoContent();
 });
 

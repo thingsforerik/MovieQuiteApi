@@ -25,7 +25,7 @@ HELM_VALUES ?= $(HELM_CHART)/values.yaml
 HELM_TIMEOUT ?= 5m
 
 # Targets
-.PHONY: help build tag push all clean info helm-install helm-upgrade helm-deploy helm-uninstall helm-dry-run helm-status helm-template helm-list deploy-all
+.PHONY: help build tag push all clean info helm-install helm-upgrade helm-deploy helm-uninstall helm-dry-run helm-status helm-template helm-list deploy-all db-up db-down db-logs db-clean db-shell dev-up dev-down dev-logs dev-restart
 
 help: ## Show this help message
 	@echo "MovieQuiteApi - OCIR Container Registry Makefile"
@@ -191,3 +191,43 @@ deploy-all: push helm-deploy ## Build, push, and deploy to Kubernetes
 	@echo "Image:     $(FULL_REPO):$(VERSION)"
 	@echo "Release:   $(HELM_RELEASE)"
 	@echo "Namespace: $(HELM_NAMESPACE)"
+
+# Local Development with Docker Compose
+db-up: ## Start MySQL database with docker-compose
+	@echo "Starting MySQL database..."
+	docker-compose up -d mysql
+	@echo "Waiting for MySQL to be healthy..."
+	@timeout 60 sh -c 'until docker-compose exec -T mysql mysqladmin ping -h localhost -u root -ppassword --silent; do sleep 2; done'
+	@echo "MySQL is ready!"
+
+db-down: ## Stop MySQL database
+	@echo "Stopping MySQL database..."
+	docker-compose down
+
+db-logs: ## Show MySQL database logs
+	docker-compose logs -f mysql
+
+db-clean: ## Stop and remove MySQL database and volumes
+	@echo "Removing MySQL database and volumes..."
+	docker-compose down -v
+	@echo "Database cleaned!"
+
+db-shell: ## Open MySQL shell
+	docker-compose exec mysql mysql -u root -ppassword moviequotes
+
+dev-up: db-up ## Start local development environment (MySQL + App)
+	@echo "Starting full development environment..."
+	docker-compose up -d
+	@echo "Development environment is running!"
+	@echo ""
+	@echo "Services:"
+	@echo "  MySQL:  localhost:3306"
+	@echo "  API:    localhost:8080"
+
+dev-down: ## Stop local development environment
+	docker-compose down
+
+dev-logs: ## Show logs from all services
+	docker-compose logs -f
+
+dev-restart: dev-down dev-up ## Restart local development environment

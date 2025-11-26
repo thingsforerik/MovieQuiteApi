@@ -105,3 +105,11 @@ volumeMounts:
 volumes:
   - name: tmp
     emptyDir: {}
+
+# Database configuration
+database:
+  enabled: true
+  # Secret containing the database connection string
+  # Create with: kubectl create secret generic mysql-connection --from-literal=connection-string="Server=...;Database=...;User=...;Password=...;"
+  secretName: mysql-connection
+  secretKey: connection-string
