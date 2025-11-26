@@ -19,7 +19,7 @@ DOCKER_BUILDKIT := 1
 
 # Helm Configuration
 HELM_RELEASE := $(APP_NAME)
-HELM_NAMESPACE ?= default
+HELM_NAMESPACE ?= moviequiteapi
 HELM_CHART := ./helm/moviequiteapi
 HELM_VALUES ?= $(HELM_CHART)/values.yaml
 HELM_TIMEOUT ?= 5m
