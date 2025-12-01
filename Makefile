@@ -2,17 +2,20 @@
 # =====================================================
 
 # Variables - customize these for your environment
-APP_NAME := moviequiteapi
+# These can be overridden via environment variables or command line
+APP_NAME ?= moviequiteapi
 VERSION ?= latest
 CHART_VERSION := $(shell grep '^version:' helm/moviequiteapi/Chart.yaml | awk '{print $$2}')
 APP_VERSION := $(shell grep '^appVersion:' helm/moviequiteapi/Chart.yaml | awk '{print $$2}' | tr -d '"')
 
 # OCI Registry Configuration
-REGION := iad
-TENANCY_NAMESPACE := idrdeojypihh
-REPO_PATH := pif/staging
+# Override these via environment variables to match your cluster setup
+REGION ?= iad
+TENANCY_NAMESPACE ?= idrdeojypihh
+REPO_NAME ?= $(REPO_PATH)/$(APP_NAME)
+REPO_PATH ?= pif/staging
 REGISTRY := $(REGION).ocir.io
-FULL_REPO := $(REGISTRY)/$(TENANCY_NAMESPACE)/$(REPO_PATH)/$(APP_NAME)
+FULL_REPO := $(REGISTRY)/$(TENANCY_NAMESPACE)/$(REPO_NAME)
 
 # Docker build arguments
 DOCKER_BUILDKIT := 1
